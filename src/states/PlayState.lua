@@ -92,6 +92,11 @@ function PlayState:update(dt)
                 -- can't go above 3 health
                 self.health = math.min(3, self.health + 1)
 
+                -- If at the full health, then increase the paddle size
+                if self.health == 3 then
+                    self.paddle:increase_size()
+                end
+
                 -- multiply recover points by 2
                 self.recoverPoints = math.min(100000, self.recoverPoints * 2)
 
@@ -168,6 +173,9 @@ function PlayState:update(dt)
     if self.ball.y >= VIRTUAL_HEIGHT then
         self.health = self.health - 1
         gSounds['hurt']:play()
+
+        -- Decrease paddle size after the ball has been missed
+        self.paddle:decrease_size()
 
         if self.health == 0 then
             gStateMachine:change('game-over', {
