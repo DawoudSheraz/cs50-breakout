@@ -15,6 +15,8 @@
 
 Paddle = Class{}
 
+local widthFactor = 32
+
 --[[
     Our Paddle will initialize at the same spot every time, in the middle
     of the world horizontally, toward the bottom.
@@ -29,17 +31,17 @@ function Paddle:init(skin)
     -- start us off with no velocity
     self.dx = 0
 
+    -- the variant is which of the four paddle sizes we currently are; 2
+    -- is the starting size, as the smallest is too tough to start with
+    self.size = 2
+
     -- starting dimensions
-    self.width = 64
+    self.width = self.size * widthFactor
     self.height = 16
 
     -- the skin only has the effect of changing our color, used to offset us
     -- into the gPaddleSkins table later
     self.skin = skin
-
-    -- the variant is which of the four paddle sizes we currently are; 2
-    -- is the starting size, as the smallest is too tough to start with
-    self.size = 2
 end
 
 function Paddle:update(dt)
@@ -74,4 +76,20 @@ end
 function Paddle:render()
     love.graphics.draw(gTextures['main'], gFrames['paddles'][self.size + 4 * (self.skin - 1)],
         self.x, self.y)
+end
+
+--[[
+    Increase the paddle size, with 4 being the maximum size
+]]
+function Paddle:increase_size()
+    self.size = math.min(self.size + 1, 4)
+    self.width = self.size * widthFactor
+end
+
+--[[
+    Decrease the paddle size, with 1 being the minimum size
+]]
+function Paddle:decrease_size()
+    self.size = math.max(self.size - 1, 1)
+    self.width = self.size * widthFactor
 end
