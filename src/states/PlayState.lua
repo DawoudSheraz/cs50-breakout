@@ -34,6 +34,7 @@ function PlayState:enter(params)
     -- give ball random starting velocity
     self.ball.dx = math.random(-200, 200)
     self.ball.dy = math.random(-50, -60)
+    self.powerup = Powerup()
 end
 
 function PlayState:update(dt)
@@ -53,6 +54,8 @@ function PlayState:update(dt)
     -- update positions based on velocity
     self.paddle:update(dt)
     self.ball:update(dt)
+    self.powerup:update(dt)
+
 
     if self.ball:collides(self.paddle) then
         -- raise ball above paddle in case it goes below it, then reverse dy
@@ -90,8 +93,11 @@ function PlayState:update(dt)
             -- if we have enough points, recover a point of health
             if self.score > self.recoverPoints then
                 -- can't go above 3 health
+
                 self.health = math.min(3, self.health + 1)
 
+                -- self.powerup:makeVisible()
+                
                 -- If at the full health, then increase the paddle size
                 if self.health == 3 then
                     self.paddle:increase_size()
@@ -169,8 +175,14 @@ function PlayState:update(dt)
         end
     end
 
+    if self.powerup:collides(self.paddle) then
+        self.powerup:reset()
+    end
+
     -- if ball goes below bounds, revert to serve state and decrease health
     if self.ball.y >= VIRTUAL_HEIGHT then
+        
+        self.powerup:reset()
         self.health = self.health - 1
         gSounds['hurt']:play()
 
@@ -207,6 +219,7 @@ end
 
 function PlayState:render()
     -- render bricks
+
     for k, brick in pairs(self.bricks) do
         brick:render()
     end
@@ -217,7 +230,9 @@ function PlayState:render()
     end
 
     self.paddle:render()
+    self.powerup:render()
     self.ball:render()
+
 
     renderScore(self.score)
     renderHealth(self.health)
