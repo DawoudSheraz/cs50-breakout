@@ -175,7 +175,7 @@ function PlayState:update(dt)
         end
     end
 
-    if self.powerup and self.powerup:collides(self.paddle) then
+    if self.powerup:collides(self.paddle) then
         self.powerup:reset()
     end
 
