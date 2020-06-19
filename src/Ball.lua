@@ -91,3 +91,24 @@ function Ball:render()
     love.graphics.draw(gTextures['main'], gFrames['balls'][self.skin],
         self.x, self.y)
 end
+
+
+function Ball:paddleCollisionUpdate(paddle)
+    -- raise ball above paddle in case it goes below it, then reverse dy
+    self.y = paddle.y - 8
+    self.dy = -self.dy
+
+    --
+    -- tweak angle of bounce based on where it hits the paddle
+    --
+
+    -- if we hit the paddle on its left side while moving left...
+    if self.x < paddle.x + (paddle.width / 2) and paddle.dx < 0 then
+        self.dx = -50 + -(8 * (paddle.x + paddle.width / 2 - self.x))
+    
+    -- else if we hit the paddle on its right side while moving right...
+    elseif self.x > paddle.x + (paddle.width / 2) and paddle.dx > 0 then
+        self.dx = 50 + (8 * math.abs(paddle.x + paddle.width / 2 - self.x))
+    end
+
+end

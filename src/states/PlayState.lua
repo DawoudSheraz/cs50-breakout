@@ -38,16 +38,8 @@ function PlayState:enter(params)
 end
 
 function PlayState:update(dt)
-    if self.paused then
-        if love.keyboard.wasPressed('space') then
-            self.paused = false
-            gSounds['pause']:play()
-        else
-            return
-        end
-    elseif love.keyboard.wasPressed('space') then
-        self.paused = true
-        gSounds['pause']:play()
+
+    if self:checkPause() then
         return
     end
 
@@ -58,23 +50,7 @@ function PlayState:update(dt)
 
 
     if self.ball:collides(self.paddle) then
-        -- raise ball above paddle in case it goes below it, then reverse dy
-        self.ball.y = self.paddle.y - 8
-        self.ball.dy = -self.ball.dy
-
-        --
-        -- tweak angle of bounce based on where it hits the paddle
-        --
-
-        -- if we hit the paddle on its left side while moving left...
-        if self.ball.x < self.paddle.x + (self.paddle.width / 2) and self.paddle.dx < 0 then
-            self.ball.dx = -50 + -(8 * (self.paddle.x + self.paddle.width / 2 - self.ball.x))
-        
-        -- else if we hit the paddle on its right side while moving right...
-        elseif self.ball.x > self.paddle.x + (self.paddle.width / 2) and self.paddle.dx > 0 then
-            self.ball.dx = 50 + (8 * math.abs(self.paddle.x + self.paddle.width / 2 - self.ball.x))
-        end
-
+        self.ball:paddleCollisionUpdate(self.paddle)
         gSounds['paddle-hit']:play()
     end
 
@@ -252,4 +228,23 @@ function PlayState:checkVictory()
     end
 
     return true
+end
+
+--[[
+    Checking if the game is paused or not
+]]
+function PlayState:checkPause()
+    if self.paused then
+        if love.keyboard.wasPressed('space') then
+            self.paused = false
+            gSounds['pause']:play()
+        else
+            return true
+        end
+    elseif love.keyboard.wasPressed('space') then
+        self.paused = true
+        gSounds['pause']:play()
+        return true
+    end
+    return false
 end
