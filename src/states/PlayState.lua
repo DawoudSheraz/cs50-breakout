@@ -32,8 +32,7 @@ function PlayState:enter(params)
     self.recoverPoints = 5000
 
     -- give ball random starting velocity
-    self.balls[0].dx = math.random(-200, 200)
-    self.balls[0].dy = math.random(-50, -60)
+    self.balls[0]:generateVelocities()
     self.powerup = Powerup()
 end
 
@@ -119,35 +118,22 @@ function PlayState:update(dt)
 end
 
 
-    -- -- if ball goes below bounds, revert to serve state and decrease health
+    -- Check if any ball goes below paddle and mark is invisible
     for idx, ball in pairs(self.balls) do
         if ball.y >= VIRTUAL_HEIGHT then
-            
-            self.powerup:reset()
-            self.health = self.health - 1
-            gSounds['hurt']:play()
-
-            -- Decrease paddle size after the ball has been missed
-            self.paddle:decrease_size()
-
-            if self.health == 0 then
-                gStateMachine:change('game-over', {
-                    score = self.score,
-                    highScores = self.highScores
-                })
-            else
-                gStateMachine:change('serve', {
-                    paddle = self.paddle,
-                    bricks = self.bricks,
-                    health = self.health,
-                    score = self.score,
-                    highScores = self.highScores,
-                    level = self.level,
-                    recoverPoints = self.recoverPoints
-                })
-            end
+            ball.is_visible = false
         end
     end
+
+
+    -- If no ball is visible, then player missed all of them
+    if not self:isAnyBallVisible() then
+        self:postBallBelowPaddle()
+    else
+        -- Remove all the invisible balls
+        self:removeInvisibleBalls()
+    end
+
 
     -- for rendering particle systems
     for k, brick in pairs(self.bricks) do
@@ -216,4 +202,56 @@ function PlayState:checkPause()
         return true
     end
     return false
+end
+
+--[[
+    To be called once the ball(s) are below the paddle
+]]
+function PlayState:postBallBelowPaddle()
+    self.powerup:reset()
+    self.health = self.health - 1
+    gSounds['hurt']:play()
+
+    -- Decrease paddle size after the ball has been missed
+    self.paddle:decrease_size()
+
+    if self.health == 0 then
+        gStateMachine:change('game-over', {
+            score = self.score,
+            highScores = self.highScores
+        })
+    else
+        gStateMachine:change('serve', {
+            paddle = self.paddle,
+            bricks = self.bricks,
+            health = self.health,
+            score = self.score,
+            highScores = self.highScores,
+            level = self.level,
+            recoverPoints = self.recoverPoints
+        })
+    end
+end
+
+--[[
+    Check if any ball is visible on the screen or not
+]]
+function PlayState:isAnyBallVisible()
+    for idx, ball in pairs(self.balls) do
+        if ball.is_visible then
+            return true
+        end
+    end
+    return false
+end
+
+--[[
+    To remove invisible balls from the table to avoid memory buildup
+]]
+function PlayState:removeInvisibleBalls()
+    for idx, ball in pairs(self.balls) do
+        if not ball.is_visible then
+            table.remove(self.balls, idx)
+        end
+    end
 end
