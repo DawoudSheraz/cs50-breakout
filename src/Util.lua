@@ -50,6 +50,17 @@ function table.slice(tbl, first, last, step)
 end
 
 --[[
+    Get number of elements in table
+]]
+function table.size(tbl)
+    local length = 0
+    for idx, val in pairs(tbl) do
+        length = length + 1
+    end
+    return length
+end
+
+--[[
     This function is specifically made to piece out the bricks from the
     sprite sheet. Since the sprite sheet has non-uniform sprites within,
     we have to return a subset of GenerateQuads.
