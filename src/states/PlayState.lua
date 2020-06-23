@@ -48,6 +48,13 @@ function PlayState:update(dt)
 
     if self.powerup:collides(self.paddle) then
         self.powerup:reset()
+        -- Generate two balls after paddle has picked up power up
+        for count=1,2 do
+            local current_length = #self.balls
+            self.balls[current_length+1] = Ball(math.random(7))
+            self.balls[current_length+1]:paddleReset(self.paddle)
+            self.balls[current_length+1]:generateVelocities()
+        end
     end
 
     -- update each ball and do a paddle collision check
@@ -61,7 +68,7 @@ function PlayState:update(dt)
 
 
 
-    for idx, ball in pairs(self.balls) do 
+    for idx, ball in pairs(self.balls) do
         -- detect collision across all bricks with each ball
         for k, brick in pairs(self.bricks) do
 
@@ -80,8 +87,6 @@ function PlayState:update(dt)
 
                     self.health = math.min(3, self.health + 1)
 
-                    -- self.powerup:makeVisible()
-                    
                     -- If at the full health, then increase the paddle size
                     if self.health == 3 then
                         self.paddle:increase_size()
@@ -104,7 +109,7 @@ function PlayState:update(dt)
                         health = self.health,
                         score = self.score,
                         highScores = self.highScores,
-                        ball = self.balls[0],
+                        balls = self.balls,
                         recoverPoints = self.recoverPoints
                     })
                 end
@@ -132,6 +137,17 @@ end
     else
         -- Remove all the invisible balls
         self:removeInvisibleBalls()
+    end
+
+    -- rendering powerup when player at full health and only
+    -- one ball is present on the screen alongwith some randomness
+    if self.health == 3 and table.size(self.balls) == 1 and math.random(500) == 10 then
+        self.powerup:makeVisible()
+    end
+
+    -- If powerup is missed, reset it
+    if self.powerup.y >= VIRTUAL_HEIGHT then
+        self.powerup:reset()
     end
 
 
@@ -179,7 +195,7 @@ function PlayState:checkVictory()
     for k, brick in pairs(self.bricks) do
         if brick.inPlay then
             return false
-        end 
+        end
     end
 
     return true
@@ -208,7 +224,6 @@ end
     To be called once the ball(s) are below the paddle
 ]]
 function PlayState:postBallBelowPaddle()
-    self.powerup:reset()
     self.health = self.health - 1
     gSounds['hurt']:play()
 
@@ -249,9 +264,10 @@ end
     To remove invisible balls from the table to avoid memory buildup
 ]]
 function PlayState:removeInvisibleBalls()
-    for idx, ball in pairs(self.balls) do
-        if not ball.is_visible then
-            table.remove(self.balls, idx)
+   for count=table.size(self.balls), 1, -1 do
+    local current_val = self.balls[count-1]
+        if current_val~=nil and current_val.is_visible == false then
+            self.balls[count-1] = nil
         end
-    end
+   end
 end
