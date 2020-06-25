@@ -71,7 +71,6 @@ function PlayState:update(dt)
     for idx, ball in pairs(self.balls) do
         -- detect collision across all bricks with each ball
         for k, brick in pairs(self.bricks) do
-
             -- only check collision if we're in play
             if brick.inPlay and ball:collides(brick) then
 
@@ -162,8 +161,8 @@ end
 end
 
 function PlayState:render()
-    -- render bricks
 
+    -- render bricks
     for k, brick in pairs(self.bricks) do
         brick:render()
     end

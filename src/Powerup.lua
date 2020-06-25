@@ -20,7 +20,7 @@ function Powerup:init()
     self.dy = math.random(50, 80)
 
     -- Generate a random skin for the powerup
-    self.skin = math.random(10)
+    self.skin = math.random(9)
 
     -- If the power up should be visible
     self.is_visible = false
@@ -42,7 +42,7 @@ function Powerup:reset()
     self.x = math.random(VIRTUAL_WIDTH/2 - 50, VIRTUAL_WIDTH/2 + 50)
     self.y = VIRTUAL_HEIGHT/2
     self.dy = math.random(50, 80)
-    self.skin = math.random(10)
+    self.skin = math.random(9)
     self.is_visible = false
 end
 
