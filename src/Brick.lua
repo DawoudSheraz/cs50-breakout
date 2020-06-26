@@ -103,9 +103,7 @@ function Brick:hit()
     )
     self.psystem:emit(64)
 
-    -- sound on hit
-    gSounds['brick-hit-2']:stop()
-    gSounds['brick-hit-2']:play()
+    self:playCollisionSound()
 
     
     -- For locked brick, after the first collision,
@@ -181,4 +179,13 @@ end
 ]]
 function Brick:renderParticles()
     love.graphics.draw(self.psystem, self.x + 16, self.y + 8)
+end
+
+--[[
+    Sound to play after ball collides with brick
+]]
+function Brick:playCollisionSound()
+    -- sound on hit
+    gSounds['brick-hit-2']:stop()
+    gSounds['brick-hit-2']:play()
 end
