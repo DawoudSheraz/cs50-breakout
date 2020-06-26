@@ -34,6 +34,12 @@ function PlayState:enter(params)
     -- give ball random starting velocity
     self.balls[0]:generateVelocities()
     self.powerup = Powerup()
+
+    self.keyPowerup = Powerup()
+    self.keyPowerup.skin = 10
+
+    self.isLockedBrickPresent = self:checkLockedBricks()
+    self.hasPickedKeyPowerup = false
 end
 
 function PlayState:update(dt)
@@ -45,6 +51,7 @@ function PlayState:update(dt)
     -- update positions based on velocity
     self.paddle:update(dt)
     self.powerup:update(dt)
+    self.keyPowerup:update(dt)
 
     if self.powerup:collides(self.paddle) then
         self.powerup:reset()
@@ -55,6 +62,12 @@ function PlayState:update(dt)
             self.balls[current_length+1]:paddleReset(self.paddle)
             self.balls[current_length+1]:generateVelocities()
         end
+    end
+
+    -- update that key powerup has been taken by paddle
+    if self.keyPowerup:collides(self.paddle) then
+        self.keyPowerup:reset()
+        self.hasPickedKeyPowerup = true
     end
 
     -- update each ball and do a paddle collision check
@@ -71,53 +84,66 @@ function PlayState:update(dt)
     for idx, ball in pairs(self.balls) do
         -- detect collision across all bricks with each ball
         for k, brick in pairs(self.bricks) do
-
             -- only check collision if we're in play
             if brick.inPlay and ball:collides(brick) then
+                local hitBrick = true
+                
+                -- If locked brick present and key has not been hit
+                -- no hit functionality will achieve but ball will
+                -- bounce back and collision sound will play
+                if brick.isLocked and not self.hasPickedKeyPowerup then
+                    hitBrick = false
+                    ball:postBrickCollision(brick)
+                    brick:playCollisionSound()
+                end
+                
+                -- Brick hit should only be done if true
+                if hitBrick then
 
-                -- add to score
-                self.score = self.score + (brick.tier * 200 + brick.color * 25)
+                    -- add to score, +1000 if brick is locked
+                    self.score = self.score + (brick.tier * 200 + brick.color * 25 + (brick.isLocked and 1000 or 0))
 
-                -- trigger the brick's hit function, which removes it from play
-                brick:hit()
+                    -- trigger the brick's hit function, which removes it from play
+                    brick:hit()
 
-                -- if we have enough points, recover a point of health
-                if self.score > self.recoverPoints then
-                    -- can't go above 3 health
+                    -- if we have enough points, recover a point of health
+                    if self.score > self.recoverPoints then
+                        -- can't go above 3 health
 
-                    self.health = math.min(3, self.health + 1)
+                        self.health = math.min(3, self.health + 1)
 
-                    -- If at the full health, then increase the paddle size
-                    if self.health == 3 then
-                        self.paddle:increase_size()
+                        -- If at the full health, then increase the paddle size
+                        if self.health == 3 then
+                            self.paddle:increase_size()
+                        end
+
+                        -- multiply recover points by 2
+                        self.recoverPoints = math.min(100000, self.recoverPoints * 2)
+
+                        -- play recover sound effect
+                        gSounds['recover']:play()
                     end
 
-                    -- multiply recover points by 2
-                    self.recoverPoints = math.min(100000, self.recoverPoints * 2)
+                    -- go to our victory screen if there are no more bricks left
+                    if self:checkVictory() then
+                        gSounds['victory']:play()
 
-                    -- play recover sound effect
-                    gSounds['recover']:play()
+                        gStateMachine:change('victory', {
+                            level = self.level,
+                            paddle = self.paddle,
+                            health = self.health,
+                            score = self.score,
+                            highScores = self.highScores,
+                            balls = self.balls,
+                            recoverPoints = self.recoverPoints
+                        })
+                    end
+
+                    ball:postBrickCollision(brick)
+
+                    -- only allow colliding with one brick, for corners
+                    break
                 end
-
-                -- go to our victory screen if there are no more bricks left
-                if self:checkVictory() then
-                    gSounds['victory']:play()
-
-                    gStateMachine:change('victory', {
-                        level = self.level,
-                        paddle = self.paddle,
-                        health = self.health,
-                        score = self.score,
-                        highScores = self.highScores,
-                        balls = self.balls,
-                        recoverPoints = self.recoverPoints
-                    })
-                end
-
-                ball:postBrickCollision(brick)
-
-                -- only allow colliding with one brick, for corners
-                break
             end
         end
 end
@@ -141,13 +167,24 @@ end
 
     -- rendering powerup when player at full health and only
     -- one ball is present on the screen alongwith some randomness
-    if self.health == 3 and table.size(self.balls) == 1 and math.random(500) == 10 then
+    if self.health == 3 and table.size(self.balls) == 1 and math.random(1000) == 10 then
         self.powerup:makeVisible()
+    end
+
+    -- Rendering key powerup
+    if not self.hasPickedKeyPowerup and self.isLockedBrickPresent and math.random(500) == 10 then
+        self.keyPowerup:makeVisible()
     end
 
     -- If powerup is missed, reset it
     if self.powerup.y >= VIRTUAL_HEIGHT then
         self.powerup:reset()
+    end
+
+    -- If key powerup is missed, reset it
+    if self.keyPowerup.y >= VIRTUAL_HEIGHT then
+        self.keyPowerup:reset()
+        self.keyPowerup.skin = 10
     end
 
 
@@ -162,8 +199,8 @@ end
 end
 
 function PlayState:render()
-    -- render bricks
 
+    -- render bricks
     for k, brick in pairs(self.bricks) do
         brick:render()
     end
@@ -175,6 +212,7 @@ function PlayState:render()
 
     self.paddle:render()
     self.powerup:render()
+    self.keyPowerup:render()
 
     for idx, ball in pairs(self.balls) do
         ball:render()
@@ -270,4 +308,18 @@ function PlayState:removeInvisibleBalls()
             self.balls[count-1] = nil
         end
    end
+end
+
+--[[
+    To check if the level has any locked brick
+]]
+function PlayState:checkLockedBricks()
+    
+    for idx, brick in pairs(self.bricks) do
+        -- Return true on encountering first locked brick
+        if brick.isLocked then
+            return true
+        end
+    end
+    return false
 end

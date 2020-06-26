@@ -154,3 +154,14 @@ function GeneratePowerUp(atlas)
     end
     return quads
 end
+
+--[[
+    Generate Quads for Locked bricks
+]]
+
+function GenerateLockedBricks(atlas)
+    local quads = {}
+    quads[0] = love.graphics.newQuad(64, 48, 32, 16, atlas:getDimensions())
+    quads[1] = love.graphics.newQuad(160, 48, 32, 16, atlas:getDimensions())
+    return quads
+end
