@@ -29,7 +29,7 @@ function PlayState:enter(params)
     self.balls = params.balls
     self.level = params.level
 
-    self.recoverPoints = 5000
+    self.recoverPoints = params.recoverPoints
 
     -- give ball random starting velocity
     self.balls[0]:generateVelocities()
